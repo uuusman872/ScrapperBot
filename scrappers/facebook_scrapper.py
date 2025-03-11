@@ -30,31 +30,36 @@ class FacebookScrapper(Scrappers):
             return self.driver.get_cookies()
         return None
     
-    def extract_data(self, profile_url, max_limit=100, pause_time_range=(2, 5), scroll_amount=500):
+    def scroll_followers(self, pause_time_range=(2, 5), scroll_amount=500):
         last_height = self.driver.execute_script("return document.body.scrollHeight")
-        profile_url += "/friends"
-        self.driver.get(profile_url)
-        result = []
         while True:
             self.driver.execute_script(f"window.scrollBy(0, {scroll_amount});")
             time.sleep(random.uniform(*pause_time_range))
-            friends_div = self.driver.find_elements(By.XPATH, '//div[@class="x78zum5 x1q0g3np x1a02dak x1qughib"]/div')
-            for friend in friends_div:
-                data = {}
-                try:
-                    username = friend.find_element(By.XPATH, './/a[@tabindex="0"]/span')
-                    data["name"] = username.text
-                    data["profile_link"] = friend.find_element(By.XPATH, ".//a").get_attribute("href")
-                    data["username"] = data["profile_link"].split("/")[-1]
-                except Exception:
-                    pass
-                if data:
-                    result.append(data)
             new_height = self.driver.execute_script("return document.body.scrollHeight")
             if new_height == last_height:
                 break
             last_height = new_height
+    
+    def extract_data(self, url):
+        url += "/friends"
+        self.driver.get(url)
+        self.scroll_followers()
+        friends_div = self.driver.find_elements(By.XPATH, '//div[@class="x78zum5 x1q0g3np x1a02dak x1qughib"]/div')
+        result = []
+        for friend in friends_div:
+            data = {}
+            try:
+                username = friend.find_element(By.XPATH, './/a[@tabindex="0"]/span')
+                data["name"] = username.text
+                data["profile_link"] = friend.find_element(By.XPATH, ".//a").get_attribute("href")
+                data["username"] = data["profile_link"].split("/")[-1]
+            except Exception:
+                pass
+            if not data:
+                continue
+            result.append(data)
         return result
+    
 
 if __name__ == "__main__":
     fb_scrapper = FacebookScrapper()

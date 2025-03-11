@@ -11,6 +11,7 @@ class Scrappers:
         if headless:
             options.add_argument("--headless")
         self.driver = webdriver.Chrome(options=options)
+        self.driver.maximize_window()
     
     def save_cookies(self, filename, cookies):
         """ Save cookies to a file """
